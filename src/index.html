@@ -10,26 +10,9 @@
 
   </head>
 <body>
-    <folder-mp3-player></folder-mp3-player>
-  <drop-zone-component></drop-zone-component>
-  <div id="song-container"></div>
-  <div id="pagination"></div>
-  <button id="selectFolderButton">Select Folder</button>
-  <ul id="fileList"></ul>
-
-  <script>
-  document.getElementById('selectFolderButton').addEventListener('click', async () => {
-      const mp3Files = await window.__TAURI__.invoke('selectFolderAndListFiles');
-      const fileList = document.getElementById('fileList');
-      fileList.innerHTML = '';
-
-      mp3Files.forEach(file => {
-        const listItem = document.createElement('li');
-        listItem.textContent = file;
-        fileList.appendChild(listItem);
-      });
-    });
   
+  <script>
+
       class DropZoneComponent extends HTMLElement {
           constructor() {
               super();

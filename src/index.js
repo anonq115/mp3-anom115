@@ -1,1 +1,1 @@
-console.log("Hello Wsadasdsdasdsadorld!");
+console.log("INDEX.JS FILE");
