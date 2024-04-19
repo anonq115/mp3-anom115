@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tauri App</title>
+    <script type="module" src="./main.js" defer></script>
+    <script src="./index.js"></script>
+
+  </head>
+<body>
+    <folder-mp3-player></folder-mp3-player>
+  <drop-zone-component></drop-zone-component>
+  <div id="song-container"></div>
+  <div id="pagination"></div>
+  <button id="selectFolderButton">Select Folder</button>
+  <ul id="fileList"></ul>
+
+  <script>
+  document.getElementById('selectFolderButton').addEventListener('click', async () => {
+      const mp3Files = await window.__TAURI__.invoke('selectFolderAndListFiles');
+      const fileList = document.getElementById('fileList');
+      fileList.innerHTML = '';
+
+      mp3Files.forEach(file => {
+        const listItem = document.createElement('li');
+        listItem.textContent = file;
+        fileList.appendChild(listItem);
+      });
+    });
+  
+      class DropZoneComponent extends HTMLElement {
+          constructor() {
+              super();
+              this.attachShadow({ mode: 'open' });
+              this.shadowRoot.innerHTML = `
+                  <style>
+                      :host {
+                          position: fixed;
+                          top: 0;
+                          left: 0;
+                          right: 0;
+                          bottom: 0;
+                          display: none;
+                          background-color: rgba(0, 0, 0, 0.7);
+                          z-index: 1000;
+                          align-items: center;
+                          justify-content: center;
+                          font-size: 24px;
+                          color: white;
+                      }
+                  </style>
+                  <div id="drop-zone">
+                      Drop your files here
+                  </div>
+              `;
+          }
+
+          show() {
+              this.style.display = 'flex';
+          }
+
+          hide() {
+              this.style.display = 'none';
+          }
+      }
+
+      customElements.define('drop-zone-component', DropZoneComponent);
+
+      const dropZone = document.querySelector('drop-zone-component');
+      document.body.style.textAlign = 'center';
+      document.body.style.fontFamily = 'Arial, sans-serif';
+
+      document.addEventListener('dragover', (event) => {
+          event.preventDefault();
+          dropZone.show();
+      });
+
+      document.addEventListener('dragleave', (event) => {
+          event.preventDefault();
+          if (event.relatedTarget === null) {
+              dropZone.hide();
+          }
+      });
+
+      document.addEventListener('drop', (event) => {
+          event.preventDefault();
+          dropZone.hide();
+          const files = Array.from(event.dataTransfer.files);
+          handleFiles(files);
+      });
+
+      const songsPerPage = 13;
+      let songs = [];
+      let currentPage = 1;
+      let currentPlayingAudio = null;
+
+      function handleFiles(files) {
+          files.forEach(file => {
+              if (file.type === "audio/mpeg") {
+                  const songUrl = URL.createObjectURL(file);
+                  songs.push({ name: file.name, url: songUrl });
+              }
+          });
+          renderSongs(currentPage);
+          renderPagination();
+      }
+
+      function renderSongs(page) {
+          const songContainer = document.getElementById('song-container');
+          songContainer.style.margin = '20px auto';
+
+          const start = (page - 1) * songsPerPage;
+          const end = start + songsPerPage;
+          const paginatedItems = songs.slice(start, end);
+
+          songContainer.innerHTML = paginatedItems.map((song, index) => `<p class="song" data-url="${song.url}" style="cursor: pointer; margin: 5px 0;">${start + index + 1}. ${song.name}</p>`).join('');
+
+          document.querySelectorAll('.song').forEach(songElement => {
+              songElement.addEventListener('click', () => {
+                  playSong(songElement.getAttribute('data-url'));
+              });
+          });
+      }
+
+      function playSong(url) {
+          if (currentPlayingAudio) {
+              currentPlayingAudio.pause();
+          }
+          currentPlayingAudio = new Audio(url);
+          currentPlayingAudio.play();
+      }
+
+      function renderPagination() {
+          const paginationContainer = document.getElementById('pagination');
+          paginationContainer.style.margin = '20px auto';
+
+          const pageCount = Math.ceil(songs.length / songsPerPage);
+          paginationContainer.innerHTML = '';
+
+          for (let i = 1; i <= pageCount; i++) {
+              const btn = document.createElement('button');
+              btn.innerText = i;
+              btn.style.margin = '0 5px';
+              btn.style.cursor = 'pointer';
+              btn.addEventListener('click', () => {
+                  currentPage = i;
+                  renderSongs(currentPage);
+              });
+              paginationContainer.appendChild(btn);
+          }
+      }
+    
+     
+  </script>
+
+  </body>
+</html>
