@@ -1,7 +1,4 @@
 const { open } = window.__TAURI__.dialog;
-
-
-//you need to slap this bitch in the 
 class FolderPicker extends HTMLElement {
   constructor() {
     super();
