@@ -22,16 +22,16 @@ class FolderPicker extends HTMLElement {
 
     const button = document.createElement('button');
     button.textContent = 'Select Folder';
-    button.addEventListener('click', this.openFolderDialog.bind(this));
+    button.addEventListener('click', throttle(this.openFolderDialog.bind(this), 500)); // Throttle the click event
 
     this.fileList = document.createElement('ul');
-    this.currentAudio = null; // Reference to the currently playing audio element
+    this.currentAudio = new Audio(); // Create a single Audio object for playback
 
     shadow.appendChild(button);
     shadow.appendChild(this.fileList);
   }
 
-  openFolderDialog() {
+  async openFolderDialog() {
     window.__TAURI__.dialog.open({ directory: true }).then(result => {
       if (result) {
         window.__TAURI__.fs.readDir(result).then(files => {
@@ -62,20 +62,19 @@ class FolderPicker extends HTMLElement {
   }
 
   async playFile(filePath) {
-    if (this.currentAudio) {
-      console.log(`Stopping previous audio: ${this.currentAudio.src}`);
-      this.currentAudio.pause(); // Pause the currently playing audio
-      this.currentAudio.src = ''; // Release the audio element's src
-      this.currentAudio = null; // Remove the reference to the currently playing audio
-    }
-  
     try {
       const result = await window.__TAURI__.fs.readBinaryFile(filePath);
       const blob = new Blob([result], { type: 'audio/mp3' });
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      this.currentAudio = audio; // Set the reference to the newly created audio element
-      audio.play()
+
+      if (this.currentAudio.src !== url) {
+        // Only update the src if it's different from the current audio src
+        this.currentAudio.pause();
+        this.currentAudio.src = url;
+        this.currentAudio.load(); // Load the new audio file
+      }
+
+      this.currentAudio.play()
         .then(() => {
           console.log(`Playing file: ${filePath}`);
           URL.revokeObjectURL(url); // Release the blob URL
@@ -88,8 +87,6 @@ class FolderPicker extends HTMLElement {
       console.error(`Error reading file: ${error}`);
     }
   }
-  
-  }
-  
+}
 
 customElements.define('folder-picker', FolderPicker);
