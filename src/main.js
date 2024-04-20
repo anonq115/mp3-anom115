@@ -25,7 +25,8 @@ class FolderPicker extends HTMLElement {
     button.addEventListener('click', throttle(this.openFolderDialog.bind(this), 500)); // Throttle the click event
 
     this.fileList = document.createElement('ul');
-    this.currentAudio = new Audio(); // Create a single Audio object for playback
+    this.audioContext = new AudioContext();
+    this.source = null;
 
     shadow.appendChild(button);
     shadow.appendChild(this.fileList);
@@ -64,29 +65,21 @@ class FolderPicker extends HTMLElement {
   async playFile(filePath) {
     try {
       const result = await window.__TAURI__.fs.readBinaryFile(filePath);
-      const blob = new Blob([result], { type: 'audio/mp3' });
-      const url = URL.createObjectURL(blob);
-
-      if (this.currentAudio.src !== url) {
-        // Only update the src if it's different from the current audio src
-        this.currentAudio.pause();
-        this.currentAudio.src = url;
-        this.currentAudio.load(); // Load the new audio file
+      const arrayBuffer = result.buffer; // Assuming result is a TypedArray
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      if (this.source) {
+        this.source.stop();
       }
-
-      this.currentAudio.play()
-        .then(() => {
-          console.log(`Playing file: ${filePath}`);
-          URL.revokeObjectURL(url); // Release the blob URL
-        })
-        .catch(error => {
-          console.error(`Error playing file: ${error}`);
-          URL.revokeObjectURL(url); // Release the blob URL
-        });
+      this.source = this.audioContext.createBufferSource();
+      this.source.buffer = audioBuffer;
+      this.source.connect(this.audioContext.destination);
+      this.source.start();
+      console.log(`Playing file: ${filePath}`);
     } catch (error) {
-      console.error(`Error reading file: ${error}`);
+      console.error(`Error playing file: ${error}`);
     }
   }
+  
 }
 
 customElements.define('folder-picker', FolderPicker);
