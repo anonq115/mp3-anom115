@@ -1,20 +1,30 @@
-const { appWindow } = window.__TAURI__.window;
-import { open } from '@tauri-apps/api/dialog';
-import { appDataDir } from '@tauri-apps/api/path';
-// Open a selection dialog for directories
-const selected = await open({
-  directory: true,
-  multiple: true,
-  defaultPath: await appDataDir(),
-});
-if (Array.isArray(selected)) {
-  console.log('11111111asdasdasdasd') // user selected multiple directories 
-} else if (selected === null) {
-  // user cancelled the selection
-} else {
-  // user selected a single directory
+const { open } = window.__TAURI__.dialog;
+
+
+//you need to slap this bitch in the 
+class FolderPicker extends HTMLElement {
+  constructor() {
+    super();
+
+    const shadow = this.attachShadow({ mode: 'open' });
+
+    const button = document.createElement('button');
+    button.textContent = 'Pick Folder';
+    button.addEventListener('click', this.openFolderDialog.bind(this));
+
+    shadow.appendChild(button);
+  }
+
+  openFolderDialog() {
+    window.__TAURI__.dialog.open().then(result => {
+      if (result) {
+        alert(`Selected folder: ${result}`);
+        // Here you can handle the selected folder path, for example, play MP3 files in the folder
+      }
+    }).catch(error => {
+      console.error(error);
+    });
+  }
 }
 
-
-
-console.log('asdasdasdasd')
+customElements.define('folder-picker', FolderPicker);

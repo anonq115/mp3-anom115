@@ -1,4 +1,8 @@
 {
+
+
+
+
   "build": {
     "devPath": "../src",
     "distDir": "../src",
@@ -9,8 +13,46 @@
     "version": "0.0.0"
   },
   "tauri": {
-    "allowlist": {
+    "allowlist": {"window": {
+      "all": true, 
+      "create": true, 
+      "center": true,
+      "requestUserAttention": true,
+      "setResizable": true,
+      "setMaximizable": true,
+      "setMinimizable": true,
+      "setClosable": true,
+      "setTitle": true,
+      "maximize": true,
+      "unmaximize": true,
+      "minimize": true,
+      "unminimize": true,
+      "show": true,
+      "hide": true,
+      "close": true,
+      "setDecorations": true,
+      "setAlwaysOnTop": true,
+      "setContentProtected": true,
+      "setSize": true,
+      "setMinSize": true,
+      "setMaxSize": true,
+      "setPosition": true,
+      "setFullscreen": true,
+      "setFocus": true,
+      "setIcon": true,
+      "setSkipTaskbar": true,
+      "setCursorGrab": true,
+      "setCursorVisible": true,
+      "setCursorIcon": true,
+      "setCursorPosition": true,
+      "setIgnoreCursorEvents": true,
+      "startDragging": true,
+      "print": true
+    }, 
     
+    "dialog": {
+      "all": true
+    },
       "all": false,
       "shell": {
         "all": false,
@@ -43,3 +85,5 @@
     }
   }
 }
+
+    
