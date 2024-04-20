@@ -49,7 +49,9 @@
       "startDragging": true,
       "print": true
     }, 
-    
+    "fs": {
+      "all": true
+    },
     "dialog": {
       "all": true
     },
