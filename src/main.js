@@ -26,7 +26,8 @@ class FolderPicker extends HTMLElement {
 
     this.fileList = document.createElement('ul');
     this.audioContext = new AudioContext();
-    this.source = null;
+    this.bufferSource = this.audioContext.createBufferSource();
+    this.buffer = null;
 
     shadow.appendChild(button);
     shadow.appendChild(this.fileList);
@@ -65,21 +66,33 @@ class FolderPicker extends HTMLElement {
   async playFile(filePath) {
     try {
       const result = await window.__TAURI__.fs.readBinaryFile(filePath);
-      const arrayBuffer = result.buffer; // Assuming result is a TypedArray
-      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-      if (this.source) {
-        this.source.stop();
-      }
-      this.source = this.audioContext.createBufferSource();
-      this.source.buffer = audioBuffer;
-      this.source.connect(this.audioContext.destination);
-      this.source.start();
-      console.log(`Playing file: ${filePath}`);
+      const arrayBuffer = result.buffer;
+      this.audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+        if (this.buffer) {
+          this.bufferSource.stop();
+        }
+        this.buffer = buffer;
+        this.bufferSource = this.audioContext.createBufferSource();
+        this.bufferSource.buffer = this.buffer;
+        this.bufferSource.connect(this.audioContext.destination);
+        this.bufferSource.start();
+        console.log(`Playing file: ${filePath}`);
+      });
     } catch (error) {
       console.error(`Error playing file: ${error}`);
     }
   }
-  
+
+  disconnectedCallback() {
+    // Clean up resources
+    if (this.bufferSource) {
+      this.bufferSource.stop();
+      this.bufferSource.disconnect();
+    }
+    if (this.audioContext) {
+      this.audioContext.close();
+    }
+  }
 }
 
 customElements.define('folder-picker', FolderPicker);
