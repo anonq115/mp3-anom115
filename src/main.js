@@ -14,37 +14,43 @@ function throttle(func, delay) {
     }
   };
 }
+
 class FolderPicker extends HTMLElement {
   constructor() {
     super();
+    this.shadow = this.attachShadow({ mode: 'open' });
+    this.button = this.createButton();
+    this.fileList = this.createFileList();
+    this.audioContext = null;
+    this.bufferSource = null;
+    this.buffer = null;
+    this.selectedFilePath = null;
 
-    const shadow = this.attachShadow({ mode: 'open' });
+    this.shadow.appendChild(this.button);
+    this.shadow.appendChild(this.fileList);
+  }
 
+  createButton() {
     const button = document.createElement('button');
     button.textContent = 'Select Folder';
     button.addEventListener('click', throttle(this.openFolderDialog.bind(this), 500)); // Throttle the click event
+    return button;
+  }
 
-    this.fileList = document.createElement('ul');
-    this.audioContext = new AudioContext();
-    this.bufferSource = this.audioContext.createBufferSource();
-    this.buffer = null;
-
-    shadow.appendChild(button);
-    shadow.appendChild(this.fileList);
+  createFileList() {
+    return document.createElement('ul');
   }
 
   async openFolderDialog() {
-    window.__TAURI__.dialog.open({ directory: true }).then(result => {
+    try {
+      const result = await window.__TAURI__.dialog.open({ directory: true });
       if (result) {
-        window.__TAURI__.fs.readDir(result).then(files => {
-          this.displayFiles(files);
-        }).catch(error => {
-          console.error('Error reading directory:', error);
-        });
+        const files = await window.__TAURI__.fs.readDir(result);
+        this.displayFiles(files);
       }
-    }).catch(error => {
-      console.error('Error selecting folder:', error);
-    });
+    } catch (error) {
+      console.error('Error selecting or reading folder:', error);
+    }
   }
 
   displayFiles(files) {
@@ -65,12 +71,18 @@ class FolderPicker extends HTMLElement {
 
   async playFile(filePath) {
     try {
+      if (this.bufferSource) {
+        this.bufferSource.stop();
+      }
+
       const result = await window.__TAURI__.fs.readBinaryFile(filePath);
       const arrayBuffer = result.buffer;
+      
+      if (!this.audioContext) {
+        this.audioContext = new AudioContext();
+      }
+
       this.audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-        if (this.buffer) {
-          this.bufferSource.stop();
-        }
         this.buffer = buffer;
         this.bufferSource = this.audioContext.createBufferSource();
         this.bufferSource.buffer = this.buffer;
